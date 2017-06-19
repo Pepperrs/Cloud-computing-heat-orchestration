@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+export OS_AUTH_URL=http://cloud.cit.tu-berlin.de:5000/v2.0
+export OS_TENANT_ID=06b5ed6b475043d3b619d0b2d1a3f95f
+export OS_TENANT_NAME="cc17-group16"
+unset OS_PROJECT_ID
+unset OS_PROJECT_NAME
+unset OS_USER_DOMAIN_NAME
+export OS_USERNAME="cc17-group16"
+export OS_PASSWORD="XXXXXXXXXXXXXX"
+export OS_REGION_NAME="RegionOne"
+export OS_ENDPOINT_TYPE=publicURL
+export OS_INTERFACE=public
+export OS_IDENTITY_API_VERSION=2
+
+openstack "$@"

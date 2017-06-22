@@ -6,6 +6,7 @@ def create_server
     'cc-openstack server create grp17_instance'\
     ' --image ubuntu-16.04'\
     " --flavor 'Cloud Computing'"\
+    " --availability-zone 'Cloud Computing 2017'"\
     ' --network cc17-net'\
     ' --security-group grp17_security_group'\
     " --key-name #{ENV['USER']}"
@@ -25,7 +26,7 @@ def wait_for_server
     error = `bash -c '(echo > /dev/tcp/#{floating_ip}/22) 2>&1'`
     break if error.empty?
     print '.'
-    sleep 0.5
+    sleep 0.25
   end
   print "\n"
 end

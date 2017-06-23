@@ -43,10 +43,10 @@ cc-openstack floating ip create tu-internal
 
 The actual benchmarking script is written in ruby and will append the
 results to a csv file. Each line consists of the time, the benchmark
-is performed and the benchmark time for scenario one and two. For each
-execution of the benchmark, we execute scenario one and two three
-times in a row. The reason is to not have falsy spikes of single
-measurements.
+is performed and the benchmark time either for scenario one or
+two. For each execution of the benchmark, we execute scenario one and
+two three times in a row. The reason is to not have falsy spikes of
+single measurements.
 
 In the first scenario, we measure the time of how long it takes to
 execute the command `openstack server list`. Because, we didn't
@@ -137,19 +137,32 @@ end
 Our results for the measurements are the following:
 
 ``` text
-2017-06-21 18:36:30 +0200;1.899074509;50.507970476
-2017-06-21 18:47:21 +0200;2.64838352;46.549212898
-2017-06-21 18:48:16 +0200;2.051581212;46.005325541
-2017-06-21 18:49:15 +0200;2.060552441;47.217909656
-2017-06-22 13:25:06 +0200;3.527799193;53.149687065
-2017-06-22 13:26:10 +0200;3.204144725;54.532848295
-2017-06-22 13:27:14 +0200;2.200417879;51.837295877
-2017-06-22 17:36:20 +0200;2.404962081;54.91377217
-2017-06-22 17:38:38 +0200;2.959915032;127.804455102
-2017-06-22 17:40:09 +0200;2.101337913;80.621974535
-2017-06-22 17:55:59 +0200;2.066445354;49.318446759
-2017-06-22 17:56:59 +0200;2.328977439;49.767466696
-2017-06-22 17:58:02 +0200;2.125526848;51.454686795
+2017-06-21 18:35:32 +0200;server list;1.899074509
+2017-06-21 18:35:35 +0200;server creation;50.507970476
+2017-06-21 18:46:26 +0200;server list;2.64838352
+2017-06-21 18:46:30 +0200;server creation;46.549212898
+2017-06-21 18:47:22 +0200;server list;2.051581212
+2017-06-21 18:47:25 +0200;server creation;46.005325541
+2017-06-21 18:48:20 +0200;server list;2.060552441
+2017-06-21 18:48:23 +0200;server creation;47.217909656
+2017-06-22 13:24:04 +0200;server list;3.527799193
+2017-06-22 13:24:08 +0200;server creation;53.149687065
+2017-06-22 13:25:07 +0200;server list;3.204144725
+2017-06-22 13:25:11 +0200;server creation;54.532848295
+2017-06-22 13:26:14 +0200;server list;2.200417879
+2017-06-22 13:26:18 +0200;server creation;51.837295877
+2017-06-22 17:35:17 +0200;server list;2.404962081
+2017-06-22 17:35:21 +0200;server creation;54.91377217
+2017-06-22 17:36:22 +0200;server list;2.959915032
+2017-06-22 17:36:26 +0200;server creation;127.804455102
+2017-06-22 17:38:41 +0200;server list;2.101337913
+2017-06-22 17:38:44 +0200;server creation;80.621974535
+2017-06-22 17:55:02 +0200;server list;2.066445354
+2017-06-22 17:55:05 +0200;server creation;49.318446759
+2017-06-22 17:56:01 +0200;server list;2.328977439
+2017-06-22 17:56:05 +0200;server creation;49.767466696
+2017-06-22 17:57:03 +0200;server list;2.125526848
+2017-06-22 17:57:06 +0200;server creation;51.454686795
 ```
 
 ### 2. Introducing Heat

@@ -63,7 +63,9 @@ def append_result
   scenario_one = server_list_duration
   scenario_two = server_creation_duration
   File.open('results.csv', 'a') do |f|
-    f << "#{Time.now};#{scenario_one};#{scenario_two}\n"
+    scenario_one_time = Time.now
+    f << "#{scenario_one_time};server list;#{scenario_one}\n"
+    f << "#{scenario_two_time};server creation;#{scenario_two}\n"
   end
 end
 

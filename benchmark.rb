@@ -1,23 +1,16 @@
 #!/usr/bin/env ruby
 
-def create_server
-  puts 'creating server'
-  cmd =
-    'cc-openstack server create grp17_instance'\
-    ' --image ubuntu-16.04'\
-    " --flavor 'Cloud Computing'"\
-    " --availability-zone 'Cloud Computing 2017'"\
-    ' --network cc17-net'\
-    ' --security-group grp17_security_group'\
-    " --key-name #{ENV['USER']}"
-  `#{cmd}`
-  puts 'connecting floating ip to server'
-  `cc-openstack server add floating ip grp17_instance #{floating_ip}`
-end
-
 def floating_ip
   @floating_ip ||=
     `cc-openstack floating ip list -c 'Floating IP Address' -f value`.strip
+end
+
+def destroy_server
+  puts 'destroying server'
+  `cc-openstack server delete grp17_instance`
+  while `cc-openstack server list`.include?('grp17_instance')
+    sleep 0.5
+  end
 end
 
 def wait_for_server
@@ -31,12 +24,19 @@ def wait_for_server
   print "\n"
 end
 
-def destroy_server
-  puts 'destroying server'
-  `cc-openstack server delete grp17_instance`
-  while `cc-openstack server list`.include?('grp17_instance')
-    sleep 0.5
-  end
+def create_server
+  puts 'creating server'
+  cmd =
+    'cc-openstack server create grp17_instance'\
+    ' --image ubuntu-16.04'\
+    " --flavor 'Cloud Computing'"\
+    " --availability-zone 'Cloud Computing 2017'"\
+    ' --network cc17-net'\
+    ' --security-group grp17_security_group'\
+    " --key-name #{ENV['USER']}"
+  `#{cmd}`
+  puts 'connecting floating ip to server'
+  `cc-openstack server add floating ip grp17_instance #{floating_ip}`
 end
 
 def server_creation_duration

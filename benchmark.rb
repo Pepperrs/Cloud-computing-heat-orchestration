@@ -59,13 +59,26 @@ def server_list_duration
   duration
 end
 
+def daytime(time)
+  if 7 <= time.hour && time.hour <= 15
+    'day'
+  elsif 16 <= time.hour && time.hour <= 23
+    'evening'
+  else
+    'night'
+  end
+end
+
 def append_result
+  sc_one_time = Time.now
+  sc_one_daytime = daytime sc_one_time
   scenario_one = server_list_duration
+  sc_two_time = Time.now
+  sc_two_daytime = daytime sc_two_time
   scenario_two = server_creation_duration
   File.open('results.csv', 'a') do |f|
-    scenario_one_time = Time.now
-    f << "#{scenario_one_time};server list;#{scenario_one}\n"
-    f << "#{scenario_two_time};server creation;#{scenario_two}\n"
+    f << "#{sc_one_time};#{sc_one_daytime};server list;#{scenario_one}\n"
+    f << "#{sc_two_time};#{sc_two_daytime};server creation;#{scenario_two}\n"
   end
 end
 

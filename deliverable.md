@@ -123,11 +123,26 @@ def server_list_duration
   duration
 end
 
+def daytime(time)
+  if 7 <= time.hour && time.hour <= 15
+    'day'
+  elsif 16 <= time.hour && time.hour <= 23
+    'evening'
+  else
+    'night'
+  end
+end
+
 def append_result
+  sc_one_time = Time.now
+  sc_one_daytime = daytime sc_one_time
   scenario_one = server_list_duration
+  sc_two_time = Time.now
+  sc_two_daytime = daytime sc_two_time
   scenario_two = server_creation_duration
   File.open('results.csv', 'a') do |f|
-    f << "#{Time.now};#{scenario_one};#{scenario_two}\n"
+    f << "#{sc_one_time};#{sc_one_daytime};server list;#{scenario_one}\n"
+    f << "#{sc_two_time};#{sc_two_daytime};server creation;#{scenario_two}\n"
   end
 end
 
@@ -137,33 +152,41 @@ end
 Our results for the measurements are the following:
 
 ``` text
-2017-06-21 18:35:32 +0200;server list;1.899074509
-2017-06-21 18:35:35 +0200;server creation;50.507970476
-2017-06-21 18:46:26 +0200;server list;2.64838352
-2017-06-21 18:46:30 +0200;server creation;46.549212898
-2017-06-21 18:47:22 +0200;server list;2.051581212
-2017-06-21 18:47:25 +0200;server creation;46.005325541
-2017-06-21 18:48:20 +0200;server list;2.060552441
-2017-06-21 18:48:23 +0200;server creation;47.217909656
-2017-06-22 13:24:04 +0200;server list;3.527799193
-2017-06-22 13:24:08 +0200;server creation;53.149687065
-2017-06-22 13:25:07 +0200;server list;3.204144725
-2017-06-22 13:25:11 +0200;server creation;54.532848295
-2017-06-22 13:26:14 +0200;server list;2.200417879
-2017-06-22 13:26:18 +0200;server creation;51.837295877
-2017-06-22 17:35:17 +0200;server list;2.404962081
-2017-06-22 17:35:21 +0200;server creation;54.91377217
-2017-06-22 17:36:22 +0200;server list;2.959915032
-2017-06-22 17:36:26 +0200;server creation;127.804455102
-2017-06-22 17:38:41 +0200;server list;2.101337913
-2017-06-22 17:38:44 +0200;server creation;80.621974535
-2017-06-22 17:55:02 +0200;server list;2.066445354
-2017-06-22 17:55:05 +0200;server creation;49.318446759
-2017-06-22 17:56:01 +0200;server list;2.328977439
-2017-06-22 17:56:05 +0200;server creation;49.767466696
-2017-06-22 17:57:03 +0200;server list;2.125526848
-2017-06-22 17:57:06 +0200;server creation;51.454686795
+2017-06-21 18:35:32 +0200;evening;server list;1.899074509
+2017-06-21 18:35:35 +0200;evening;server creation;50.507970476
+2017-06-21 18:46:26 +0200;evening;server list;2.64838352
+2017-06-21 18:46:30 +0200;evening;server creation;46.549212898
+2017-06-21 18:47:22 +0200;evening;server list;2.051581212
+2017-06-21 18:47:25 +0200;evening;server creation;46.005325541
+2017-06-21 18:48:20 +0200;evening;server list;2.060552441
+2017-06-21 18:48:23 +0200;evening;server creation;47.217909656
+2017-06-22 13:24:04 +0200;day;server list;3.527799193
+2017-06-22 13:24:08 +0200;day;server creation;53.149687065
+2017-06-22 13:25:07 +0200;day;server list;3.204144725
+2017-06-22 13:25:11 +0200;day;server creation;54.532848295
+2017-06-22 13:26:14 +0200;day;server list;2.200417879
+2017-06-22 13:26:18 +0200;day;server creation;51.837295877
+2017-06-22 17:35:17 +0200;evening;server list;2.404962081
+2017-06-22 17:35:21 +0200;evening;server creation;54.91377217
+2017-06-22 17:36:22 +0200;evening;server list;2.959915032
+2017-06-22 17:36:26 +0200;evening;server creation;127.804455102
+2017-06-22 17:38:41 +0200;evening;server list;2.101337913
+2017-06-22 17:38:44 +0200;evening;server creation;80.621974535
+2017-06-22 17:55:02 +0200;evening;server list;2.066445354
+2017-06-22 17:55:05 +0200;evening;server creation;49.318446759
+2017-06-22 17:56:01 +0200;evening;server list;2.328977439
+2017-06-22 17:56:05 +0200;evening;server creation;49.767466696
+2017-06-22 17:57:03 +0200;evening;server list;2.125526848
+2017-06-22 17:57:06 +0200;evening;server creation;51.454686795
 ```
+
+Scenario one (server list).
+
+![](images/server_list.png)
+
+Scenario two (server creation).
+
+![](images/server_creation.png)
 
 ### 2. Introducing Heat
 

@@ -35,6 +35,7 @@ def create_server
     ' --security-group grp17_security_group'\
     " --key-name #{ENV['USER']}"
   `#{cmd}`
+  sleep 1 # api sometimes too slow...
   puts 'connecting floating ip to server'
   `cc-openstack server add floating ip grp17_instance #{floating_ip}`
 end

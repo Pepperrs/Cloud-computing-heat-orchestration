@@ -39,3 +39,22 @@ cc-heat stack-create grp17_stack -f server.yml -P "name=grp17_instance;key_pair=
 But like Anton said in the forum we need to boot the machine in the
 "Cloud Computing 2017" availability zone. So the command still needs
 to be extended.
+
+### UPDATE on Usage:
+
+I didn't use the `heat` command anymore for our assignment, but the
+`openstack` command. When you execute `heat stack-create ...`, it says
+the heat client is deprecated and you should use `openstack stack
+create`. That's what I did, to solve assignment 2 (see
+in [deliverable.md](deliverable.md)).
+
+By the way, my cli versions are:
+
+``` shell
+$ python --version
+Python 3.6.0
+$ openstack --version
+openstack 3.11.0
+$ heat --version
+1.10.0
+```

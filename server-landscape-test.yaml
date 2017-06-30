@@ -1,4 +1,4 @@
-heat_template_version: 2013-05-23
+heat_template_version: 2015-10-15
 
 description: HOT template for two interconnected VMs with floating ips.
 
@@ -36,14 +36,15 @@ resources:
         type: OS::Neutron::FloatingIP
         properties:
           floating_network_id: tu-internal
+          port_id: { get_attr: [server1, port] }
 
 # creates a custom security group managed by Heat that opens the port
 # 80 and 22 to the outside world
-  server_security_group:
+  stack_security_group:
     type: OS::Neutron::SecurityGroup
     properties:
       description: Add security group rules for server
-      name: grp17_security_group
+      name: stack_security_group
       rules:
         - remote_ip_prefix: 0.0.0.0/0
           protocol: tcp
@@ -60,18 +61,12 @@ resources:
         properties:
           name: Server1
           image: ubuntu-16.04
-          flavor: "Cloud Computing"
+          flavor: Cloud Computing
           network: { get_resource: private_net }
           key_pair: { get_param: key_pair }
-          avaliability_zone: 'Cloud Computing 17'
+          zone: Cloud Computing 2017
           security_groups:
-            - grp17_security_group
-
-  floating_ip_association:
-    type: OS::Neutron::FloatingIPAssociation
-    properties:
-      floatingip_id: { get_resource: server1_floating_ip }
-      port_id: { get_attr: [server1, port] }
+            - stack_security_group
 
   server2:
         type: server.yaml
@@ -81,9 +76,9 @@ resources:
           flavor: Cloud Computing
           network: { get_resource: private_net }
           key_pair: { get_param: key_pair }
-          availability_zone: 'Cloud Computing 17'
+          zone: Cloud Computing 2017
           security_groups:
-            - grp17_security_group
+            - stack_security_group
 
 outputs:
   server1_private_ip:

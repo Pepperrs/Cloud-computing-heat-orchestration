@@ -1,0 +1,97 @@
+heat_template_version: 2013-05-23
+
+description: HOT template for two interconnected VMs with floating ips.
+
+parameters:
+  key_pair:
+    type: string
+    description: Name of keypair to assign to servers
+
+resources:
+  private_net:
+        type: OS::Neutron::Net
+        properties:
+          name: private-net
+
+  private_subnet:
+        type: OS::Neutron::Subnet
+        properties:
+          network_id: { get_resource: private_net }
+          cidr: 172.16.2.0/24
+          gateway_ip: 172.16.2.1
+
+  router1:
+        type: OS::Neutron::Router
+        properties:
+          external_gateway_info:
+                network: tu-internal
+
+  router1_interface:
+        type: OS::Neutron::RouterInterface
+        properties:
+          router_id: { get_resource: router1 }
+          subnet_id: { get_resource: private_subnet }
+
+  server1_floating_ip:
+        type: OS::Neutron::FloatingIP
+        properties:
+          floating_network_id: tu-internal
+
+# creates a custom security group managed by Heat that opens the port
+# 80 and 22 to the outside world
+  server_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: Add security group rules for server
+      name: grp17_security_group
+      rules:
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: 22
+          port_range_max: 22
+        - protocol: tcp
+          port_range_min: 80
+          port_range_max: 80
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: icmp
+
+  server1:
+        type: server.yaml
+        properties:
+          name: Server1
+          image: ubuntu-16.04
+          flavor: "Cloud Computing"
+          network: { get_resource: private_net }
+          key_pair: { get_param: key_pair }
+          avaliability_zone: 'Cloud Computing 17'
+          security_groups:
+            - grp17_security_group
+
+  floating_ip_association:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: server1_floating_ip }
+      port_id: { get_attr: [server1, port] }
+
+  server2:
+        type: server.yaml
+        properties:
+          name: Server2
+          image: ubuntu-16.04
+          flavor: Cloud Computing
+          network: { get_resource: private_net }
+          key_pair: { get_param: key_pair }
+          availability_zone: 'Cloud Computing 17'
+          security_groups:
+            - grp17_security_group
+
+outputs:
+  server1_private_ip:
+        description: Private IP address of server1
+        value: { get_attr: [ server1, first_address ] }
+  server1_public_ip:
+        description: Floating IP address of server1
+        value: { get_attr: [ server1_floating_ip, floating_ip_address ] }
+  server2_private_ip:
+        description: Private IP address of server2
+        value: { get_attr: [ server2, first_address ] }

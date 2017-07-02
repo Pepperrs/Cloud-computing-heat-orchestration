@@ -5,88 +5,104 @@ description: HOT template for two interconnected VMs with floating ips.
 parameters:
   key_pair:
     type: string
-    description: Name of keypair to assign to servers
+    label: Key Pair
+    constraints:
+      - custom_constraint: nova.keypair
 
 resources:
   private_net:
-        type: OS::Neutron::Net
-        properties:
-          name: private-net
+    type: OS::Neutron::Net
+    properties:
+      name: private_net
 
   private_subnet:
-        type: OS::Neutron::Subnet
-        properties:
-          network_id: { get_resource: private_net }
-          cidr: 172.16.2.0/24
-          gateway_ip: 172.16.2.1
+    type: OS::Neutron::Subnet
+    depends_on: private_net
+    properties:
+      network_id: { get_resource: private_net }
+      cidr: 172.16.2.0/24
+      gateway_ip: 172.16.2.1
 
-  router1:
-        type: OS::Neutron::Router
-        properties:
-          external_gateway_info:
-                network: tu-internal
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: tu-internal
 
-  router1_interface:
-        type: OS::Neutron::RouterInterface
-        properties:
-          router_id: { get_resource: router1 }
-          subnet_id: { get_resource: private_subnet }
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    depends_on:
+      - router
+      - private_subnet
+    properties:
+      router_id: { get_resource: router }
+      subnet_id: { get_resource: private_subnet }
 
-  server1_floating_ip:
-        type: OS::Neutron::FloatingIP
-        properties:
-          floating_network_id: tu-internal
-          port_id: { get_attr: [server1, port] }
-
-# creates a custom security group managed by Heat that opens the port
-# 80 and 22 to the outside world
-  stack_security_group:
+  http_ssh_security_group:
     type: OS::Neutron::SecurityGroup
     properties:
-      description: Add security group rules for server
-      name: stack_security_group
+      name: http_ssh_security_group
       rules:
-        - remote_ip_prefix: 0.0.0.0/0
-          protocol: tcp
-          port_range_min: 22
-          port_range_max: 22
-        - protocol: tcp
-          port_range_min: 80
-          port_range_max: 80
-        - remote_ip_prefix: 0.0.0.0/0
+        - direction: ingress
           protocol: icmp
+        - direction: ingress
+          port_range_max: 22
+          port_range_min: 22
+          protocol: tcp
+        - direction: ingress
+          port_range_max: 80
+          port_range_min: 80
+          protocol: tcp
 
-  server1:
+  frontend:
+    type: server.yaml
+    depends_on:
+      - http_ssh_security_group
+      - private_net
+    properties:
+      name: frontend
+      flavor: Cloud Computing
+      zone: Cloud Computing 2017
+      image: ubuntu-16.04
+      security_groups:
+        - http_ssh_security_group
+      key_pair: { get_param: key_pair }
+      network: { get_resource: private_net }
+
+  frontend_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: tu-internal
+
+  frontend_ip_assoc:
+    type: OS::Neutron::FloatingIPAssociation
+    depends_on:
+      - frontend
+      - frontend_ip
+    properties:
+      floatingip_id: { get_resource: frontend_ip }
+      port_id: { get_attr: [frontend, port] }
+
+  backend_group:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+      - http_ssh_security_group
+      - private_net
+    properties:
+      count: 2
+      resource_def:
         type: server.yaml
         properties:
-          name: Server1
-          image: ubuntu-16.04
-          flavor: Cloud Computing
-          network: { get_resource: private_net }
+          name: backend-%index%
           key_pair: { get_param: key_pair }
-          zone: Cloud Computing 2017
-          security_groups:
-            - stack_security_group
-
-  server2:
-        type: server.yaml
-        properties:
-          name: Server2
-          image: ubuntu-16.04
           flavor: Cloud Computing
-          network: { get_resource: private_net }
-          key_pair: { get_param: key_pair }
-          zone: Cloud Computing 2017
+          image: ubuntu-16.04
           security_groups:
-            - stack_security_group
+            - http_ssh_security_group
+          zone: Cloud Computing 2017
+          network: { get_resource: private_net }
 
 outputs:
-  server1_private_ip:
-        description: Private IP address of server1
-        value: { get_attr: [ server1, first_address ] }
-  server1_public_ip:
-        description: Floating IP address of server1
-        value: { get_attr: [ server1_floating_ip, floating_ip_address ] }
-  server2_private_ip:
-        description: Private IP address of server2
-        value: { get_attr: [ server2, first_address ] }
+  frontend_public_ip:
+    description: Private IP address of frontend.
+    value: { get_attr: [ frontend_ip ] }

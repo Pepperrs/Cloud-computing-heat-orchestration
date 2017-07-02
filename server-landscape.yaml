@@ -1,0 +1,108 @@
+heat_template_version: 2015-10-15
+
+description: HOT template for two interconnected VMs with floating ips.
+
+parameters:
+  key_pair:
+    type: string
+    label: Key Pair
+    constraints:
+      - custom_constraint: nova.keypair
+
+resources:
+  private_net:
+    type: OS::Neutron::Net
+    properties:
+      name: private_net
+
+  private_subnet:
+    type: OS::Neutron::Subnet
+    depends_on: private_net
+    properties:
+      network_id: { get_resource: private_net }
+      cidr: 172.16.2.0/24
+      gateway_ip: 172.16.2.1
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: tu-internal
+
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    depends_on:
+      - router
+      - private_subnet
+    properties:
+      router_id: { get_resource: router }
+      subnet_id: { get_resource: private_subnet }
+
+  http_ssh_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name: http_ssh_security_group
+      rules:
+        - direction: ingress
+          protocol: icmp
+        - direction: ingress
+          port_range_max: 22
+          port_range_min: 22
+          protocol: tcp
+        - direction: ingress
+          port_range_max: 80
+          port_range_min: 80
+          protocol: tcp
+
+  frontend:
+    type: server.yaml
+    depends_on:
+      - http_ssh_security_group
+      - private_net
+    properties:
+      name: frontend
+      flavor: Cloud Computing
+      zone: Cloud Computing 2017
+      image: ubuntu-16.04
+      security_groups:
+        - http_ssh_security_group
+      key_pair: { get_param: key_pair }
+      network: { get_resource: private_net }
+
+  frontend_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: tu-internal
+
+  frontend_ip_assoc:
+    type: OS::Neutron::FloatingIPAssociation
+    depends_on:
+      - frontend
+      - frontend_ip
+    properties:
+      floatingip_id: { get_resource: frontend_ip }
+      port_id: { get_attr: [frontend, port] }
+
+  backend_group:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+      - http_ssh_security_group
+      - private_net
+    properties:
+      count: 2
+      resource_def:
+        type: server.yaml
+        properties:
+          name: backend-%index%
+          key_pair: { get_param: key_pair }
+          flavor: Cloud Computing
+          image: ubuntu-16.04
+          security_groups:
+            - http_ssh_security_group
+          zone: Cloud Computing 2017
+          network: { get_resource: private_net }
+
+outputs:
+  frontend_public_ip:
+    description: Private IP address of frontend.
+    value: { get_attr: [ frontend_ip ] }

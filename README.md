@@ -35,6 +35,10 @@ Then the command I used to is:
 ``` shell
 cc-heat stack-create grp17_stack -f server.yml -P "name=grp17_instance;key_pair=$USER;flavor=Cloud Computing;image=ubuntu-16.04;network=cc17-net"
 ```
+or
+``` shell
+./cc-openstack stack create grp17_stack -t server-landscape-corrected.yaml --parameter "key_name=kybranz;flavor=Cloud Computing;image=ubuntu-16.04;public_net_id=pub_network_01;private_net_id=priv_network_01;private_subnet_id=priv_subnet_01;availability_zone=Cloud Computing 2017"
+```
 
 But like Anton said in the forum we need to boot the machine in the
 "Cloud Computing 2017" availability zone. So the command still needs

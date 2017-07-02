@@ -38,7 +38,7 @@ openstack security group rule create grp17_security_group \
   --description ssh-ingress --ingress --protocol tcp --dst-port 22:22
 
 # create floating ip
-cc-openstack floating ip create tu-internal
+openstack floating ip create tu-internal
 ```
 
 The actual benchmarking script is written in ruby and will append the
@@ -203,7 +203,8 @@ openstack stack create \
   --parameter image=ubuntu-16.04 \
   --parameter 'zone=Cloud Computing 2017' \
   --parameter network=cc17-net \
-  -t server.yml grp17_stack
+  --parameter security_groups=grp17_security_group \
+  -t server.yaml grp17_stack
 ```
 
 To have the server reachable, we need to connect it to the floating ip.
@@ -228,10 +229,150 @@ openstack server list
 
 ### 3. Advanced Heat Templates
 
-### Submission Deliverable
+``` yaml
+heat_template_version: 2015-10-15
 
-1. Detailed description of your cloud benchmarking methodology, including any scripts or other code
-2. Benchmarking results of the six different combinations of scenarios and time slots, including plots and interpretation of the results
-3. Commented listing of commands you executed for Task 2
-4. The contents of your server-landscape.yml​ file
-5. Commented listing of commands you executed to test your advanced Heat template
+description: HOT template for two interconnected VMs with floating ips.
+
+parameters:
+  key_pair:
+    type: string
+    label: Key Pair
+    constraints:
+      - custom_constraint: nova.keypair
+
+resources:
+  private_net:
+    type: OS::Neutron::Net
+    properties:
+      name: private_net
+
+  private_subnet:
+    type: OS::Neutron::Subnet
+    depends_on: private_net
+    properties:
+      network_id: { get_resource: private_net }
+      cidr: 172.16.2.0/24
+      gateway_ip: 172.16.2.1
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: tu-internal
+
+  router_interface:
+    type: OS::Neutron::RouterInterface
+    depends_on:
+      - router
+      - private_subnet
+    properties:
+      router_id: { get_resource: router }
+      subnet_id: { get_resource: private_subnet }
+
+  http_ssh_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name: http_ssh_security_group
+      rules:
+        - direction: ingress
+          protocol: icmp
+        - direction: ingress
+          port_range_max: 22
+          port_range_min: 22
+          protocol: tcp
+        - direction: ingress
+          port_range_max: 80
+          port_range_min: 80
+          protocol: tcp
+
+  frontend:
+    type: server.yaml
+    depends_on:
+      - http_ssh_security_group
+      - private_net
+    properties:
+      name: frontend
+      flavor: Cloud Computing
+      zone: Cloud Computing 2017
+      image: ubuntu-16.04
+      security_groups:
+        - http_ssh_security_group
+      key_pair: { get_param: key_pair }
+      network: { get_resource: private_net }
+
+  frontend_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: tu-internal
+
+  frontend_ip_assoc:
+    type: OS::Neutron::FloatingIPAssociation
+    depends_on:
+      - frontend
+      - frontend_ip
+    properties:
+      floatingip_id: { get_resource: frontend_ip }
+      port_id: { get_attr: [frontend, port] }
+
+  backend_group:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+      - http_ssh_security_group
+      - private_net
+    properties:
+      count: 2
+      resource_def:
+        type: server.yaml
+        properties:
+          name: backend-%index%
+          key_pair: { get_param: key_pair }
+          flavor: Cloud Computing
+          image: ubuntu-16.04
+          security_groups:
+            - http_ssh_security_group
+          zone: Cloud Computing 2017
+          network: { get_resource: private_net }
+
+outputs:
+  frontend_public_ip:
+    description: Private IP address of frontend.
+    value: { get_attr: [ frontend_ip ] }
+```
+
+Instantiating the `server-landscape.yaml` template:
+
+``` shell
+openstack stack create \
+  --parameter key_pair=schasse \
+  -t server-landscape.yaml \
+  grp17_server_landscape
+```
+
+Extracting `floating_ip` and private ips:
+
+``` shell
+openstack stack show grp17_server_landscape
+openstack server list
+```
+Testing internet connectivity:
+
+``` shell
+local $ ssh -A ubuntu@10.200.2.176
+frontend $ curl whatthecommit.com/index.txt
+We'll figure it out on Monday
+frontend $ ssh ubuntu@172.16.2.4
+backend-0 $ curl whatthecommit.com/index.txt
+I expected something different.
+backend-0 $ exit
+frontend $ ssh ubuntu@172.16.2.5
+backend-1 $ curl whatthecommit.com/index.txt
+arrrggghhhhh fixed!
+backend-0 $ exit
+fronted $ exit
+```
+Delete stack:
+
+``` shell
+for i in 1 2 3 4 5; do openstack delete -y --wait grp17_server_landscape; done
+```

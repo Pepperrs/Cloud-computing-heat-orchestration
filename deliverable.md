@@ -31,10 +31,10 @@ ssh-keygen -t rsa -b 4096 -C $USER
 openstack keypair create $USER --public-key ~/.ssh/id_rsa.pub
 
 # create security group with icmp and ssh ingress
-openstack security group create grp17_security_group
-openstack security group rule create grp17_security_group \
+openstack security group create grp16_security_group
+openstack security group rule create grp16_security_group \
   --description icmp-ingress --ingress --protocol icmp
-openstack security group rule create grp17_security_group \
+openstack security group rule create grp16_security_group \
   --description ssh-ingress --ingress --protocol tcp --dst-port 22:22
 
 # create floating ip
@@ -71,8 +71,8 @@ end
 
 def destroy_server
   puts 'destroying server'
-  `openstack server delete grp17_instance`
-  while `openstack server list`.include?('grp17_instance')
+  `openstack server delete grp16_instance`
+  while `openstack server list`.include?('grp16_instance')
     sleep 0.5
   end
 end
@@ -91,17 +91,17 @@ end
 def create_server
   puts 'creating server'
   cmd =
-    'openstack server create grp17_instance'\
+    'openstack server create grp16_instance'\
     ' --image ubuntu-16.04'\
     " --flavor 'Cloud Computing'"\
     " --availability-zone 'Cloud Computing 2017'"\
     ' --network cc17-net'\
-    ' --security-group grp17_security_group'\
+    ' --security-group grp16_security_group'\
     " --key-name #{ENV['USER']}"
   `#{cmd}`
   sleep 1 # api sometimes too slow...
   puts 'connecting floating ip to server'
-  `openstack server add floating ip grp17_instance #{floating_ip}`
+  `openstack server add floating ip grp16_instance #{floating_ip}`
 end
 
 def server_creation_duration
@@ -204,33 +204,33 @@ Then we can actually create the stack with the correct parameters.
 
 ``` shell
 openstack stack create \
-  --parameter name=grp17_instance \
+  --parameter name=grp16_instance \
   --parameter key_pair=$USER \
   --parameter 'flavor=Cloud Computing' \
   --parameter image=ubuntu-16.04 \
   --parameter 'zone=Cloud Computing 2017' \
   --parameter network=cc17-net \
-  --parameter security_groups=grp17_security_group \
-  -t server.yaml grp17_stack
+  --parameter security_groups=grp16_security_group \
+  -t server.yaml grp16_stack
 ```
 
 To have the server reachable, we need to connect it to the floating ip.
 
 ``` shell
-grp17_ip=$(openstack floating ip list -c 'Floating IP Address' -f value)
-openstack server add floating ip grp17_instance $grp17_ip
+grp16_ip=$(openstack floating ip list -c 'Floating IP Address' -f value)
+openstack server add floating ip grp16_instance $grp16_ip
 ```
 
 Then we can connect to the server via ssh.
 
 ``` shell
-ssh ubuntu@$grp17_ip
+ssh ubuntu@$grp16_ip
 ```
 
 To cleanup, we delete the stack and check the server is gone.
 
 ``` shell
-openstack stack delete -y grp17_stack
+openstack stack delete -y grp16_stack
 openstack server list
 ```
 
@@ -353,13 +353,13 @@ Instantiating the `server-landscape.yaml` template:
 openstack stack create \
   --parameter key_pair=schasse \
   -t server-landscape.yaml \
-  grp17_server_landscape
+  grp16_server_landscape
 ```
 
 Extracting `floating_ip` and private ips:
 
 ``` shell
-openstack stack show grp17_server_landscape
+openstack stack show grp16_server_landscape
 openstack server list
 ```
 Testing internet connectivity:
@@ -381,5 +381,5 @@ fronted $ exit
 Delete stack:
 
 ``` shell
-for i in 1 2 3 4 5; do openstack delete -y --wait grp17_server_landscape; done
+for i in 1 2 3 4 5; do openstack delete -y --wait grp16_server_landscape; done
 ```

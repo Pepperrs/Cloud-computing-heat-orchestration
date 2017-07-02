@@ -99,6 +99,7 @@ def create_server
     ' --security-group grp17_security_group'\
     " --key-name #{ENV['USER']}"
   `#{cmd}`
+  sleep 1 # api sometimes too slow...
   puts 'connecting floating ip to server'
   `openstack server add floating ip grp17_instance #{floating_ip}`
 end
@@ -152,32 +153,24 @@ end
 Our results for the measurements are the following:
 
 ``` text
-2017-06-21 18:35:32 +0200;evening;server list;1.899074509
-2017-06-21 18:35:35 +0200;evening;server creation;50.507970476
-2017-06-21 18:46:26 +0200;evening;server list;2.64838352
-2017-06-21 18:46:30 +0200;evening;server creation;46.549212898
-2017-06-21 18:47:22 +0200;evening;server list;2.051581212
-2017-06-21 18:47:25 +0200;evening;server creation;46.005325541
-2017-06-21 18:48:20 +0200;evening;server list;2.060552441
-2017-06-21 18:48:23 +0200;evening;server creation;47.217909656
-2017-06-22 13:24:04 +0200;day;server list;3.527799193
-2017-06-22 13:24:08 +0200;day;server creation;53.149687065
-2017-06-22 13:25:07 +0200;day;server list;3.204144725
-2017-06-22 13:25:11 +0200;day;server creation;54.532848295
-2017-06-22 13:26:14 +0200;day;server list;2.200417879
-2017-06-22 13:26:18 +0200;day;server creation;51.837295877
-2017-06-22 17:35:17 +0200;evening;server list;2.404962081
-2017-06-22 17:35:21 +0200;evening;server creation;54.91377217
-2017-06-22 17:36:22 +0200;evening;server list;2.959915032
-2017-06-22 17:36:26 +0200;evening;server creation;127.804455102
-2017-06-22 17:38:41 +0200;evening;server list;2.101337913
-2017-06-22 17:38:44 +0200;evening;server creation;80.621974535
-2017-06-22 17:55:02 +0200;evening;server list;2.066445354
-2017-06-22 17:55:05 +0200;evening;server creation;49.318446759
-2017-06-22 17:56:01 +0200;evening;server list;2.328977439
-2017-06-22 17:56:05 +0200;evening;server creation;49.767466696
-2017-06-22 17:57:03 +0200;evening;server list;2.125526848
-2017-06-22 17:57:06 +0200;evening;server creation;51.454686795
+2017-06-26 10:17:16 +0200;day;server list;1.898167474
+2017-06-26 10:17:18 +0200;day;server creation;44.236652119
+2017-06-26 10:18:10 +0200;day;server list;1.909897429
+2017-06-26 10:18:12 +0200;day;server creation;52.718781472
+2017-06-26 10:19:12 +0200;day;server list;1.921518069
+2017-06-26 10:19:14 +0200;day;server creation;43.841367673
+2017-06-26 17:35:17 +0200;evening;server list;2.404962081
+2017-06-26 17:35:21 +0200;evening;server creation;54.91377217
+2017-06-26 17:36:22 +0200;evening;server list;2.959915032
+2017-06-26 17:36:26 +0200;evening;server creation;127.804455102
+2017-06-26 17:38:41 +0200;evening;server list;2.101337913
+2017-06-26 17:38:44 +0200;evening;server creation;80.621974535
+2017-07-02 00:00:23 +0200;night;server list;3.16800319
+2017-07-02 00:00:26 +0200;night;server creation;53.355386207
+2017-07-02 00:01:30 +0200;night;server list;3.27768787
+2017-07-02 00:01:33 +0200;night;server creation;50.141687503
+2017-07-02 00:02:35 +0200;night;server list;2.844035127
+2017-07-02 00:02:38 +0200;night;server creation;46.623196888
 ```
 
 Scenario one (server list).
@@ -187,6 +180,20 @@ Scenario one (server list).
 Scenario two (server creation).
 
 ![](images/server_creation.png)
+
+In the results we can see, that server list api requests take between
+1.9 and 3.3 seconds. At ~10 a.m. the requests were the fastest and had
+the fewest deviation. Probably not many people are using the api at
+that time. This correlates to the server creation at that
+time. Evening times seem much busier.
+
+Server cration takes between 44 and 128 seconds. We expected a
+correlation between server list and server creation at any daytime,
+but in the night server creation was almost as fast as during 10
+a.m.. This may also be just a network latency problem, though.
+
+The busiest time is in the evening. One server creation process took
+over 2 minutes, which is quite long.
 
 ### 2. Introducing Heat
 
